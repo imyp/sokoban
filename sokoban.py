@@ -4,12 +4,16 @@ from __future__ import annotations
 import dataclasses
 import typing
 import sys
-import tty
 import os
-import termios
 import argparse
+import platform
+if platform.system() == "Windows":
+    import msvcrt
+else:
+    import termios
+    import tty
 
-def get_key():
+def get_key_linux():
     old_settings = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())
     try:
@@ -19,6 +23,12 @@ def get_key():
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
 
+def get_key_windows():
+    while True:
+        if msvcrt.kbhit():
+            return msvcrt.getch().decode()
+
+get_key = get_key_linux if platform.system() != "Windows" else get_key_windows
 class Cell:
     def __init__(self, symbol: str) -> None:
         self.state = CellState(symbol)
